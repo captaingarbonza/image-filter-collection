@@ -22,20 +22,22 @@ class MainWindow : public QMainWindow
     	void Save();
     	void LoadNewImage( QImage image );
     	void FilterTriggered( QAction* action );
-    	void FilterComplete( QImage result );
     	void Undo();
     	void Redo();
 
     signals:
     	void UndoIsActive(bool active);
     	void RedoIsActive(bool active);
+    	void ImageLoaded(bool loaded);
 
 	private:
 		void UpdateVisibleImage( QImage image );
 		void UpdateEditMenuStates();
 
         void InitImagePane();
-		void InitMenuBar();
+		void InitFileMenu();
+		void InitEditMenu();
+		void InitFilterMenu();
 
 		FilterProcessor* mFilterProcessor;
 

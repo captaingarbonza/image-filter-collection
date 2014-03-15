@@ -18,7 +18,10 @@ MainWindow::MainWindow()
     connect( mFilterProcessor, SIGNAL( FilterDone(QImage) ), this, SLOT( LoadNewImage(QImage) ) );
 
     InitImagePane();
-	InitMenuBar();
+    
+	InitFileMenu();
+	InitEditMenu();
+	InitFilterMenu();
 
 	setCentralWidget( mScrollArea );
 	setMinimumSize( mScrollArea->minimumSize() );
@@ -89,6 +92,10 @@ MainWindow::Save()
 ///
 {
 	QString file_name = QFileDialog::getSaveFileName( this, tr("Save File"), "", "Image (*.png *.bmp *.jpg" );
+    if( file_name != "" && mCurrentImage != NULL && !mCurrentImage->isNull() )
+    {
+        mCurrentImage->save( file_name );
+    }
 }
 
 void
@@ -104,55 +111,76 @@ MainWindow::FilterTriggered( QAction* action )
 ///  Nothing. The filter processor is in charge of letting us know when the filtering is done.
 ///
 {
-	mFilterProcessor->StartFilter( action->objectName().toStdString(), *mCurrentImage );
-}
-
-void 
-MainWindow::FilterComplete( QImage result )
-{
-	if( mPreviousImage != NULL )
+	if( mCurrentImage != NULL && !mCurrentImage->isNull() && action != NULL )
 	{
-		delete mPreviousImage;
+		mFilterProcessor->StartFilter( action->objectName().toStdString(), *mCurrentImage );
 	}
-
-	mPreviousImage = mCurrentImage;
 }
 
 void 
 MainWindow::Undo()
+///
+/// Returns to the previous image state
+///
+/// @return
+/// Nothing
+///
 {
+	// Move current image to the next image slot so we can return to it
+	// with a redo
 	if( mNextImage != NULL )
 	{
 		delete mNextImage;
 	}
-
 	mNextImage = mCurrentImage;
+
+	// Set previous image as the current image
 	mCurrentImage = mPreviousImage;
 	mPreviousImage = NULL;
 
+	// Update the state of the GUI
 	UpdateVisibleImage( *mCurrentImage );
 	UpdateEditMenuStates();
 }
 
 void 
 MainWindow::Redo()
+///
+/// Returns to the image prior to an undo
+///
+/// @return
+///  Nothing
+///
 {
+	// Move the current image to the previous image slot
 	if( mPreviousImage != NULL )
 	{
 		delete mPreviousImage;
 	}
-
 	mPreviousImage = mCurrentImage;
+
+	// Set next image as the current image
 	mCurrentImage = mNextImage;
 	mNextImage = NULL;
 
+	// Update the state of the GUI
 	UpdateVisibleImage( *mCurrentImage );
 	UpdateEditMenuStates();
 }
 
 void 
 MainWindow::LoadNewImage( QImage image )
+///
+/// Loads a new image
+///
+/// @param image
+///  The image to be loaded
+///
+/// @return
+///  Nothing
+///
 {
+	// Move the past image to be the previous image
 	if( mPreviousImage != NULL )
 	{
 		delete mPreviousImage;
@@ -160,14 +188,19 @@ MainWindow::LoadNewImage( QImage image )
 
 	mPreviousImage = mCurrentImage;
 
+	// Delete next image if it exists, redo functionality will be reset.
 	if( mNextImage != NULL )
 	{
 		delete mNextImage;
 		mNextImage = NULL;
 	}
 
+	// Set this image as the current image
 	mCurrentImage = new QImage();
 	*mCurrentImage = image.copy();
+
+	// Update the state of the GUI
+	emit ImageLoaded( mCurrentImage != NULL && !mCurrentImage->isNull() );
 
 	UpdateVisibleImage( image );
 	UpdateEditMenuStates();
@@ -190,6 +223,13 @@ MainWindow::UpdateVisibleImage( QImage image )
 
 void
 MainWindow::UpdateEditMenuStates()
+///
+/// Emits signals to disable or enable undo and redo functionality
+/// depending on whether or not an appropriate image exists to return to.
+///
+/// @return
+///  Nothing
+///
 {
 	emit UndoIsActive( mPreviousImage != NULL );
 	emit RedoIsActive( mNextImage != NULL );
@@ -224,9 +264,9 @@ MainWindow::Center()
 }
 
 void
-MainWindow::InitMenuBar()
+MainWindow::InitFileMenu()
 ///
-/// Initializes the menu bar and it's actions
+/// Initializes the file menu and it's associated actions
 ///
 /// @return
 ///  Nothing
@@ -235,26 +275,29 @@ MainWindow::InitMenuBar()
 	mOpenAction = new QAction( tr("&Open"), this );
 	mSaveAction = new QAction( tr("&Save"), this );	
 
-	///
-	/// Ghost the save action as it needs an image to be loaded to function correctly.
-	/// Connect the action so it turns back on when an image is set successfully.
-	///
+	// Ghost the save action as it needs an image to be loaded to function correctly.
+	// Connect the action so it turns back on when an image is set successfully.
 	mSaveAction->setDisabled( true );
-	//connect( mFilterProcessingThread, SIGNAL( ImageLoaded(bool) ), mSaveAction, SLOT( setEnabled(bool) ) );
+	connect( this, SIGNAL( ImageLoaded(bool) ), mSaveAction, SLOT( setEnabled(bool) ) );
 
-	///
-	/// Connect the actions to their slots in mMainImagePane
-	///
+	// Connect the actions to their slots
 	connect( mOpenAction, SIGNAL( triggered() ), this, SLOT( Open() ) );
 	connect( mSaveAction, SIGNAL( triggered() ), this, SLOT( Save() ) );
 
-	///
-	/// Add the actions to the menu
-	///
 	mFileMenu = menuBar()->addMenu( tr("&File") );
 	mFileMenu->addAction( mOpenAction );
 	mFileMenu->addAction( mSaveAction );
+}
 
+void
+MainWindow::InitEditMenu()
+///
+/// Initializes the edit menu and it's associated actions
+///
+/// @return
+///  Nothing
+///
+{
 	mUndoAction = new QAction( tr("&Undo"), this);
 	mRedoAction = new QAction( tr("&Redo"), this);
 
@@ -262,22 +305,41 @@ MainWindow::InitMenuBar()
 	mEditMenu->addAction( mUndoAction );
 	mEditMenu->addAction( mRedoAction );
 
+	// Connect the menu actions to their respective slots
 	connect( mUndoAction, SIGNAL( triggered() ), this, SLOT( Undo() ) );
 	connect( mRedoAction, SIGNAL( triggered() ), this, SLOT( Redo() ) );
 
+	// Disable the actions until the main window broadcasts for them to be active
 	mUndoAction->setDisabled( true );
 	mRedoAction->setDisabled( true );
 
 	connect( this, SIGNAL( UndoIsActive(bool) ), mUndoAction, SLOT( setEnabled(bool) ) );
 	connect( this, SIGNAL( RedoIsActive(bool) ), mRedoAction, SLOT( setEnabled(bool) ) );
+}
 
+void
+MainWindow::InitFilterMenu()
+///
+/// Initializes the filter menu and it's associated actions
+///
+/// @return
+///  Nothing
+///
+{
+	// Create the filter menu actions and add their associated filter
+	// name as the object name of the action so it can be retrieved later.
 	mInvertAction = new QAction( tr("&Invert"), this);
 	mInvertAction->setObjectName("invert");
 
 	mFilterMenu = menuBar()->addMenu( tr("&Filters") );
 	mFilterMenu->addAction( mInvertAction );
 
+	// Call the filter triggered slot when any menu item is triggered.
 	connect( mFilterMenu, SIGNAL( triggered(QAction*) ), this, SLOT( FilterTriggered(QAction*) ) );
+
+	// Disable the filter menu when no image is loaded
+	mFilterMenu->setDisabled( true );
+	connect( this, SIGNAL( ImageLoaded(bool) ), mFilterMenu, SLOT( setEnabled(bool) ) );
 }
 
 void
