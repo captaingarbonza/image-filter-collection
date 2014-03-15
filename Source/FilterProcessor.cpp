@@ -1,4 +1,5 @@
 #include "FilterProcessor.h"
+#include "Filters/InvertFilter.h"
 
 using namespace std;
 
@@ -32,7 +33,9 @@ FilterProcessor::run()
 	if( !mImage.isNull() )
 	{
 		QMutexLocker locker(&mutex);
-        mImage.invertPixels();
+        uchar* source = mImage.bits();
+        InvertFilter filter = InvertFilter();
+        mImage = QImage(filter.RunFilter(source, mImage.width(), mImage.height(), 4), mImage.width(), mImage.height(), mImage.format());
 
         // Pass the processed canvas to anyone who is interested
 		emit FilterDone( mImage );
