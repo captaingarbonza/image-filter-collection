@@ -4,11 +4,18 @@ MainWindow::MainWindow()
 ///
 /// Constructor
 ///
+: mCurrentImage( NULL ),
+  mPreviousImage( NULL ),
+  mNextImage( NULL )
 {
     setWindowTitle( tr( "Image Filter Collection" ) );
     
 	setMaximumSize( QSize( 1250, 650 ) );
     setMinimumSize( QSize( 200, 200 ) );
+
+    mFilterProcessor = new FilterProcessor();
+
+    connect( mFilterProcessor, SIGNAL( FilterDone(QImage) ), this, SLOT( UpdateCurrentImage(QImage) ) );
 
     InitImagePane();
 	InitMenuBar();
@@ -25,6 +32,15 @@ MainWindow::~MainWindow()
 	delete mOpenAction;
 	delete mSaveAction;
 	delete mFileMenu;
+
+	delete mInvertAction;
+	delete mFilterMenu;
+
+	delete mFilterProcessor;
+
+	delete mPreviousImage;
+	delete mCurrentImage;
+	delete mNextImage;
 }
 
 void
@@ -54,9 +70,6 @@ MainWindow::Open()
         // Update the current image to this image
         UpdateCurrentImage( *image );
 
-        // Pass ownership of the image to the filter processing thread
-        //mFilterProcessingThread->SetImage( image );
-
         // Resize window to fit new image
         Resize();
     }
@@ -72,6 +85,12 @@ MainWindow::Save()
 ///
 {
 	QString file_name = QFileDialog::getSaveFileName( this, tr("Save File"), "", "Image (*.png *.bmp *.jpg" );
+}
+
+void
+MainWindow::FilterTriggered( QAction* action )
+{
+	mFilterProcessor->StartFilter( action->objectName().toStdString(), *mCurrentImage );
 }
 
 void
@@ -97,6 +116,8 @@ MainWindow::UpdateCurrentImage( QImage image )
 /// @return
 ///  Nothing
 {
+	mCurrentImage = new QImage();
+	*mCurrentImage = image.copy();
 	mImageContainer->setPixmap( QPixmap::fromImage( image ) );
     mImageContainer->adjustSize();
 }
@@ -160,6 +181,14 @@ MainWindow::InitMenuBar()
 	mFileMenu = menuBar()->addMenu( tr("&File") );
 	mFileMenu->addAction( mOpenAction );
 	mFileMenu->addAction( mSaveAction );
+
+	mInvertAction = new QAction( tr("&Invert"), this);
+	mInvertAction->setObjectName("invert");
+
+	mFilterMenu = menuBar()->addMenu( tr("&Filters") );
+	mFilterMenu->addAction( mInvertAction );
+
+	connect( mFilterMenu, SIGNAL( triggered(QAction*) ), this, SLOT( FilterTriggered(QAction*) ) );
 }
 
 void

@@ -4,6 +4,8 @@
 #include <QApplication>
 #include <QtWidgets>
 
+#include "FilterProcessor.h"
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -20,18 +22,27 @@ class MainWindow : public QMainWindow
     	void Save();
     	void ApplyCurrentFilter();
     	void UpdateCurrentImage( QImage image );
-
+    	void FilterTriggered( QAction* action );
 	private:
         void InitImagePane();
 		void InitMenuBar();
+
+		FilterProcessor* mFilterProcessor;
+
+		QImage* mCurrentImage;
+		QImage* mPreviousImage;
+		QImage* mNextImage;
 
 		QScrollArea* mScrollArea;
 		QLabel* mImageContainer;
 
 		QMenu* mFileMenu;
+		QMenu* mFilterMenu;
 
 		QAction* mOpenAction;
 		QAction* mSaveAction;
+
+		QAction* mInvertAction;
 };
 
 #endif
