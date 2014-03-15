@@ -15,7 +15,7 @@ MainWindow::MainWindow()
 
     mFilterProcessor = new FilterProcessor();
 
-    connect( mFilterProcessor, SIGNAL( FilterDone(QImage) ), this, SLOT( UpdateCurrentImage(QImage) ) );
+    connect( mFilterProcessor, SIGNAL( FilterDone(QImage) ), this, SLOT( LoadNewImage(QImage) ) );
 
     InitImagePane();
 	InitMenuBar();
@@ -32,6 +32,10 @@ MainWindow::~MainWindow()
 	delete mOpenAction;
 	delete mSaveAction;
 	delete mFileMenu;
+
+	delete mUndoAction;
+	delete mRedoAction;
+	delete mEditMenu;
 
 	delete mInvertAction;
 	delete mFilterMenu;
@@ -64,11 +68,11 @@ MainWindow::Open()
         app_settings.setValue(default_dir_key, current_dir.absoluteFilePath(file_name));
 
         // Load the chosen file as the unprocessed image
-        QImage* image = new QImage;
-        image->load( file_name );
+        QImage image;
+        image.load( file_name );
 
         // Update the current image to this image
-        UpdateCurrentImage( *image );
+        LoadNewImage( image );
 
         // Resize window to fit new image
         Resize();
@@ -89,24 +93,88 @@ MainWindow::Save()
 
 void
 MainWindow::FilterTriggered( QAction* action )
+///
+/// Triggers a filter on the current image by calling the filter processor.
+///
+/// @param action
+///  The action that was triggered. The action's object name property is the name of the
+///  filter to be triggered.
+///
+/// @return
+///  Nothing. The filter processor is in charge of letting us know when the filtering is done.
+///
 {
 	mFilterProcessor->StartFilter( action->objectName().toStdString(), *mCurrentImage );
 }
 
-void
-MainWindow::ApplyCurrentFilter()
-///
-/// Sets up parameter values and triggers processing via the filter processing thread.
-///
-/// @return
-///  Nothing
-///
+void 
+MainWindow::FilterComplete( QImage result )
 {
-	//mFilterProcessingThread->BeginProcessing( new LayeredStrokesFilter() );
+	if( mPreviousImage != NULL )
+	{
+		delete mPreviousImage;
+	}
+
+	mPreviousImage = mCurrentImage;
+}
+
+void 
+MainWindow::Undo()
+{
+	if( mNextImage != NULL )
+	{
+		delete mNextImage;
+	}
+
+	mNextImage = mCurrentImage;
+	mCurrentImage = mPreviousImage;
+	mPreviousImage = NULL;
+
+	UpdateVisibleImage( *mCurrentImage );
+	UpdateEditMenuStates();
+}
+
+void 
+MainWindow::Redo()
+{
+	if( mPreviousImage != NULL )
+	{
+		delete mPreviousImage;
+	}
+
+	mPreviousImage = mCurrentImage;
+	mCurrentImage = mNextImage;
+	mNextImage = NULL;
+
+	UpdateVisibleImage( *mCurrentImage );
+	UpdateEditMenuStates();
+}
+
+void 
+MainWindow::LoadNewImage( QImage image )
+{
+	if( mPreviousImage != NULL )
+	{
+		delete mPreviousImage;
+	}
+
+	mPreviousImage = mCurrentImage;
+
+	if( mNextImage != NULL )
+	{
+		delete mNextImage;
+		mNextImage = NULL;
+	}
+
+	mCurrentImage = new QImage();
+	*mCurrentImage = image.copy();
+
+	UpdateVisibleImage( image );
+	UpdateEditMenuStates();
 }
 
 void
-MainWindow::UpdateCurrentImage( QImage image )
+MainWindow::UpdateVisibleImage( QImage image )
 ///
 /// Sets the pixmap displayed by the main window to a new image
 ///
@@ -116,10 +184,15 @@ MainWindow::UpdateCurrentImage( QImage image )
 /// @return
 ///  Nothing
 {
-	mCurrentImage = new QImage();
-	*mCurrentImage = image.copy();
 	mImageContainer->setPixmap( QPixmap::fromImage( image ) );
     mImageContainer->adjustSize();
+}
+
+void
+MainWindow::UpdateEditMenuStates()
+{
+	emit UndoIsActive( mPreviousImage != NULL );
+	emit RedoIsActive( mNextImage != NULL );
 }
 
 void
@@ -181,6 +254,22 @@ MainWindow::InitMenuBar()
 	mFileMenu = menuBar()->addMenu( tr("&File") );
 	mFileMenu->addAction( mOpenAction );
 	mFileMenu->addAction( mSaveAction );
+
+	mUndoAction = new QAction( tr("&Undo"), this);
+	mRedoAction = new QAction( tr("&Redo"), this);
+
+	mEditMenu = menuBar()->addMenu( tr("&Edit") );
+	mEditMenu->addAction( mUndoAction );
+	mEditMenu->addAction( mRedoAction );
+
+	connect( mUndoAction, SIGNAL( triggered() ), this, SLOT( Undo() ) );
+	connect( mRedoAction, SIGNAL( triggered() ), this, SLOT( Redo() ) );
+
+	mUndoAction->setDisabled( true );
+	mRedoAction->setDisabled( true );
+
+	connect( this, SIGNAL( UndoIsActive(bool) ), mUndoAction, SLOT( setEnabled(bool) ) );
+	connect( this, SIGNAL( RedoIsActive(bool) ), mRedoAction, SLOT( setEnabled(bool) ) );
 
 	mInvertAction = new QAction( tr("&Invert"), this);
 	mInvertAction->setObjectName("invert");
