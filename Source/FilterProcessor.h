@@ -21,11 +21,18 @@ class FilterProcessor : public QThread
 	signals:
 		void FilterDone( QImage result );
 
+	protected:
+	    void run();
+
 	private:
 		void InitFilterLibrary();
 
 		std::map<std::string, Filter*>  mFilterLibrary;
 
+		QImage mImage;
+
+		QMutex mutex;
+	    QWaitCondition condition;
 };
 
 #endif

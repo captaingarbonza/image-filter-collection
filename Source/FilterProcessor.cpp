@@ -15,11 +15,32 @@ FilterProcessor::~FilterProcessor()
 /// Destructor
 ///
 {
-
+    wait();
 }
 
 void
-InitFilterLibrary()
+FilterProcessor::run()
+///
+/// Runs the thread work for the filter processing thread. 
+/// Runs a loop which continues until the thread is aborted.
+/// The thread starts running by calling the start() function.
+///
+/// @return
+///  Nothing
+///
+{
+	if( !mImage.isNull() )
+	{
+		QMutexLocker locker(&mutex);
+        mImage.invertPixels();
+
+        // Pass the processed canvas to anyone who is interested
+		emit FilterDone( mImage );
+	}
+}
+
+void
+FilterProcessor::InitFilterLibrary()
 ///
 /// Adds the default filters to the filter collection
 ///
@@ -42,7 +63,7 @@ FilterProcessor::StartFilter( string filter_name, QImage image )
 ///  The image resulting from the filtering process
 ///
 {
-	QImage result = image.copy();
-	result.invertPixels();
-	emit FilterDone( result );
+	QMutexLocker locker(&mutex);
+	mImage = image.copy();
+	start();
 }
