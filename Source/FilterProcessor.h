@@ -5,6 +5,7 @@
 #include <QtWidgets>
 #include <string>
 #include <map>
+#include <boost/shared_ptr.hpp>
 
 #include "Filter.h"
 
@@ -27,9 +28,10 @@ class FilterProcessor : public QThread
 	private:
 		void InitFilterLibrary();
 
-		std::map<std::string, Filter*>  mFilterLibrary;
+		std::map<std::string, boost::shared_ptr<Filter> >  mFilterLibrary;
 
 		QImage mImage;
+		std::string mFilterName;
 
 		QMutex mutex;
 	    QWaitCondition condition;
