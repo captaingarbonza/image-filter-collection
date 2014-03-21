@@ -3,6 +3,7 @@
 #include "Filters/GaussianBlur.h"
 
 typedef boost::shared_ptr<Filter> filter_ptr;
+typedef boost::shared_ptr<uchar> uchar_ptr;
 
 using namespace std;
 
@@ -19,8 +20,11 @@ FilterProcessor::~FilterProcessor()
 /// Destructor
 ///
 {
+	{
+		QMutexLocker locker(&mutex);
+		mFilterLibrary.clear();
+	}
     wait();
-    mFilterLibrary.clear();
 }
 
 void
@@ -37,9 +41,8 @@ FilterProcessor::run()
 	if( !mImage.isNull() )
 	{
 		QMutexLocker locker(&mutex);
-        uchar* source = mImage.bits();
-        uchar* result = mFilterLibrary[mFilterName]->RunFilter(source, mImage.width(), mImage.height(), 4);
-        mImage = QImage(result, mImage.width(), mImage.height(), mImage.format());
+        uchar_ptr result( mFilterLibrary[mFilterName]->RunFilter(mImage.bits(), mImage.width(), mImage.height(), 4) );
+        mImage = QImage(result.get(), mImage.width(), mImage.height(), mImage.format());
 
         // Pass the processed canvas to anyone who is interested
 		emit FilterDone( mImage );
