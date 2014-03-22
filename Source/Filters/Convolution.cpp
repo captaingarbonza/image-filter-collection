@@ -32,6 +32,9 @@ Convolution::HorizontalConvo( uchar* source, uchar* destination, int width, int 
 /// @param kernel_size
 ///  The size of the given kernel
 ///
+/// @return
+///  Nothing
+///
 {
 	for( int j = 0; j < height; j++ )
 	{
@@ -82,6 +85,9 @@ Convolution::VerticalConvo( uchar* source, uchar* destination, int width, int he
 /// @param kernel_size
 ///  The size of the given kernel
 ///
+/// @return
+///  Nothing
+///
 {
 	for( int j = 0; j < height; j++ )
 	{
@@ -131,6 +137,9 @@ Convolution::TwoDConvo( uchar* source, uchar* destination, int width, int height
 ///
 /// @param kernel_size
 ///  The width and height of the given kernel i.e the kernel is an kernel_size * kernel_size array
+///
+/// @return
+///  Nothing
 ///
 {
 	for( int j = 0; j < height; j++ )

@@ -21,6 +21,7 @@ class FilterProcessor : public QThread
 
 	signals:
 		void FilterDone( QImage result );
+		void FilterStatus( QString status_text );
 
 	protected:
 	    void run();

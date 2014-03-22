@@ -25,6 +25,10 @@ MainWindow::MainWindow()
 
 	setCentralWidget( mScrollArea );
 	setMinimumSize( mScrollArea->minimumSize() );
+
+	mStatusText = new QLabel;
+	statusBar()->addWidget(mStatusText);
+	connect( mFilterProcessor, SIGNAL( FilterStatus(QString) ), this, SLOT( StatusBarUpdated(QString) ) );
 }
 
 MainWindow::~MainWindow()
@@ -115,7 +119,12 @@ MainWindow::FilterTriggered( QAction* action )
 {
 	if( mCurrentImage != NULL && !mCurrentImage->isNull() && action != NULL )
 	{
+		StatusBarUpdated( QString("Processing...") );
 		mFilterProcessor->StartFilter( action->objectName().toStdString(), *mCurrentImage );
+	}
+	else
+	{
+		StatusBarUpdated( QString("Problem with image. Filter canceled.") );
 	}
 }
 
@@ -235,6 +244,12 @@ MainWindow::UpdateEditMenuStates()
 {
 	emit UndoIsActive( mPreviousImage != NULL );
 	emit RedoIsActive( mNextImage != NULL );
+}
+
+void
+MainWindow::StatusBarUpdated( QString text )
+{
+	mStatusText->setText(text);
 }
 
 void

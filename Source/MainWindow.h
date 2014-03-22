@@ -25,6 +25,8 @@ class MainWindow : public QMainWindow
     	void Undo();
     	void Redo();
 
+    	void StatusBarUpdated(QString);
+
     signals:
     	void UndoIsActive(bool active);
     	void RedoIsActive(bool active);
@@ -47,6 +49,7 @@ class MainWindow : public QMainWindow
 
 		QScrollArea* mScrollArea;
 		QLabel* mImageContainer;
+		QLabel* mStatusText;
 
 		QMenu* mFileMenu;
 		QMenu* mEditMenu;

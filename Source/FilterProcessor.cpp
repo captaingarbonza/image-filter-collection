@@ -48,6 +48,11 @@ FilterProcessor::run()
 
 	        // Pass the processed canvas to anyone who is interested
 			emit FilterDone( mImage );
+			emit FilterStatus( QString("Done!") );
+		}
+		else
+		{
+			emit FilterStatus( QString("There was an error in processing. Filter canceled!") );
 		}
 	}
 }
