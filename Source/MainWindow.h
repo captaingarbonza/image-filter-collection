@@ -58,8 +58,9 @@ class MainWindow : public QMainWindow
 		QAction* mUndoAction;
 		QAction* mRedoAction;
 
-		QAction* mInvertAction;
+		QAction* mBoxBlurAction;
 		QAction* mGaussianAction;
+		QAction* mInvertAction;
 };
 
 #endif

@@ -40,8 +40,9 @@ MainWindow::~MainWindow()
 	delete mRedoAction;
 	delete mEditMenu;
 
-	delete mInvertAction;
+	delete mBoxBlurAction;
 	delete mGaussianAction;
+	delete mInvertAction;
 	delete mFilterMenu;
 
 	delete mFilterProcessor;
@@ -329,14 +330,17 @@ MainWindow::InitFilterMenu()
 {
 	// Create the filter menu actions and add their associated filter
 	// name as the object name of the action so it can be retrieved later.
-	mInvertAction = new QAction( tr("&Invert"), this);
-	mInvertAction->setObjectName("invert");
+	mBoxBlurAction = new QAction( tr("&Box Blur"), this);
+	mBoxBlurAction->setObjectName("box_blur");
 	mGaussianAction = new QAction( tr("&Gaussian Blur"), this);
 	mGaussianAction->setObjectName("gaussian");
+	mInvertAction = new QAction( tr("&Invert"), this);
+	mInvertAction->setObjectName("invert");
 
 	mFilterMenu = menuBar()->addMenu( tr("&Filters") );
-	mFilterMenu->addAction( mInvertAction );
+	mFilterMenu->addAction( mBoxBlurAction );
 	mFilterMenu->addAction( mGaussianAction );
+	mFilterMenu->addAction( mInvertAction );
 
 	// Call the filter triggered slot when any menu item is triggered.
 	connect( mFilterMenu, SIGNAL( triggered(QAction*) ), this, SLOT( FilterTriggered(QAction*) ) );

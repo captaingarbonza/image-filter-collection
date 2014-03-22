@@ -1,6 +1,8 @@
 #include "FilterProcessor.h"
-#include "Filters/InvertFilter.h"
+
+#include "Filters/BoxBlur.h"
 #include "Filters/GaussianBlur.h"
+#include "Filters/InvertFilter.h"
 
 typedef boost::shared_ptr<Filter> filter_ptr;
 typedef boost::shared_ptr<uchar> uchar_ptr;
@@ -20,11 +22,8 @@ FilterProcessor::~FilterProcessor()
 /// Destructor
 ///
 {
-	{
-		QMutexLocker locker(&mutex);
-		mFilterLibrary.clear();
-	}
     wait();
+    mFilterLibrary.clear();
 }
 
 void
@@ -41,11 +40,15 @@ FilterProcessor::run()
 	if( !mImage.isNull() )
 	{
 		QMutexLocker locker(&mutex);
-        uchar_ptr result( mFilterLibrary[mFilterName]->RunFilter(mImage.bits(), mImage.width(), mImage.height(), 4) );
-        mImage = QImage(result.get(), mImage.width(), mImage.height(), mImage.format());
+		uchar* result_data = mFilterLibrary[mFilterName]->RunFilter(mImage.bits(), mImage.width(), mImage.height(), 4);
+		if( result_data != mImage.bits() )
+		{
+	        mImage = QImage(result_data, mImage.width(), mImage.height(), mImage.format());
+	        delete [] result_data; // QImage takes a copy, so we don't need this pointer anymore.
 
-        // Pass the processed canvas to anyone who is interested
-		emit FilterDone( mImage );
+	        // Pass the processed canvas to anyone who is interested
+			emit FilterDone( mImage );
+		}
 	}
 }
 
@@ -57,6 +60,7 @@ FilterProcessor::InitFilterLibrary()
 {
 	mFilterLibrary["invert"] = filter_ptr( new InvertFilter() );
 	mFilterLibrary["gaussian"] = filter_ptr( new GaussianBlur() );
+	mFilterLibrary["box_blur"] = filter_ptr( new BoxBlur() );
 }
 
 void
