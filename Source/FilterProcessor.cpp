@@ -1,6 +1,14 @@
+///
+/// Stores a library of possible image filters.
+/// Calls filters in a separate thread when instructed.
+///
+/// Created by Crystal Valente.
+///
+
 #include "FilterProcessor.h"
 
 #include "Filters/BoxBlur.h"
+#include "Filters/Canny.h"
 #include "Filters/GaussianBlur.h"
 #include "Filters/InvertFilter.h"
 
@@ -11,7 +19,7 @@ using namespace std;
 
 FilterProcessor::FilterProcessor()
 ///
-/// Constructor
+/// Constructor.
 ///
 {
 	InitFilterLibrary();
@@ -19,7 +27,7 @@ FilterProcessor::FilterProcessor()
 
 FilterProcessor::~FilterProcessor()
 ///
-/// Destructor
+/// Destructor.
 ///
 {
     wait();
@@ -29,12 +37,12 @@ FilterProcessor::~FilterProcessor()
 void
 FilterProcessor::run()
 ///
-/// Runs the thread work for the filter processing thread. 
-/// Runs a loop which continues until the thread is aborted.
+/// Runs the thread work for the filter processing thread.
 /// The thread starts running by calling the start() function.
+/// Thread stops at the end of the function.
 ///
 /// @return
-///  Nothing
+///  Nothing.
 ///
 {
 	if( !mImage.isNull() )
@@ -62,7 +70,10 @@ FilterProcessor::InitFilterLibrary()
 ///
 /// Adds the default filters to the filter collection
 ///
+/// @return
+///  Nothing.
 {
+	mFilterLibrary["canny"] = filter_ptr( new CannyEdge() );
 	mFilterLibrary["invert"] = filter_ptr( new InvertFilter() );
 	mFilterLibrary["gaussian"] = filter_ptr( new GaussianBlur() );
 	mFilterLibrary["box_blur"] = filter_ptr( new BoxBlur() );
@@ -71,7 +82,7 @@ FilterProcessor::InitFilterLibrary()
 void
 FilterProcessor::StartFilter( string filter_name, QImage image )
 ///
-/// Runs a given filter on a given image and returns the resulting image.
+/// Sets the current image and filter name and starts the thread to begin filtering.
 ///
 /// @param filter_name
 ///  The name of the filter to be applied
@@ -80,7 +91,7 @@ FilterProcessor::StartFilter( string filter_name, QImage image )
 ///  The image to be filtered
 ///
 /// @return
-///  The image resulting from the filtering process
+///  Nothing.
 ///
 {
 	QMutexLocker locker(&mutex);

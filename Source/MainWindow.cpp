@@ -1,3 +1,10 @@
+///
+/// The main window of the filter collection program. Handles most of the GUI.
+/// Passes filtering responsibility to the FilterProcessor.
+///
+/// Created by Crystal Valente.
+///
+
 #include "MainWindow.h"
 
 MainWindow::MainWindow()
@@ -45,6 +52,7 @@ MainWindow::~MainWindow()
 	delete mEditMenu;
 
 	delete mBoxBlurAction;
+	delete mCannyAction;
 	delete mGaussianAction;
 	delete mInvertAction;
 	delete mFilterMenu;
@@ -347,6 +355,8 @@ MainWindow::InitFilterMenu()
 	// name as the object name of the action so it can be retrieved later.
 	mBoxBlurAction = new QAction( tr("&Box Blur"), this);
 	mBoxBlurAction->setObjectName("box_blur");
+	mCannyAction = new QAction( tr("&Canny Edge Detection"), this);
+	mCannyAction->setObjectName("canny");
 	mGaussianAction = new QAction( tr("&Gaussian Blur"), this);
 	mGaussianAction->setObjectName("gaussian");
 	mInvertAction = new QAction( tr("&Invert"), this);
@@ -354,6 +364,7 @@ MainWindow::InitFilterMenu()
 
 	mFilterMenu = menuBar()->addMenu( tr("&Filters") );
 	mFilterMenu->addAction( mBoxBlurAction );
+	mFilterMenu->addAction( mCannyAction );
 	mFilterMenu->addAction( mGaussianAction );
 	mFilterMenu->addAction( mInvertAction );
 

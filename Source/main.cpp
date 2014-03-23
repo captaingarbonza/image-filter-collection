@@ -1,3 +1,9 @@
+///
+/// The main method for the filter collection program. Sets up Qt's main window.
+///
+/// Created by Crystal Valente.
+///
+
 #include <iostream>
 #include <QApplication>
 #include "MainWindow.h"
